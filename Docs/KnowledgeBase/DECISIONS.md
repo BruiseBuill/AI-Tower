@@ -19,6 +19,20 @@
 - 理由：项目将长期由 AI 协助开发，需要稳定记录需求、约束、架构和未决问题，减少
   不同轮次之间的上下文丢失与冲突。
 
+## 2026-08-12：Control + Component + Data 对象架构
+
+- 决策：保留用户习惯的 Control + Component + Data 组合方式，Control 是物体唯一公开
+  入口，Component 只依赖 Data。
+- 决策：Data 不再知道或持有 Control 和 Component；Data 只保存运行时共享状态、提供
+  领域方法并发布内部/领域事件。推荐编译期依赖为 `Control -> Data <- Component`。
+- 决策：外部输入使用 Control 的命令方法，不使用“Control 事件 -> Data 事件”的机械
+  中转；对外事件只由 Control 选择性暴露，来源是 Control 订阅 Data 的领域事件。
+- 决策：生命周期由 Control 统一驱动；Component 按优先级打开、逆序关闭，并在
+  `OnOpen` / `OnClose` 中对称订阅和解绑 Data 事件。
+- 理由：保留物体内部行为拆分和共享数据的开发习惯，同时消除循环依赖、公共 Data
+  绕过边界、事件链路过长、对象池重复订阅及生命周期顺序不可靠等问题。
+- 影响范围：`Assets/Scripts/BaseFramework/Object`、组件排序工具及后续所有运行时物体。
+
 ## 记录格式
 
 后续重大决策在文件末尾追加：日期、决策、理由、影响范围。若推翻旧决策，应明确

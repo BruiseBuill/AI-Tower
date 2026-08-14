@@ -60,7 +60,7 @@ namespace BF.Utility
             }
             if (index * 2 < list.Count - 2)
             {
-                //´æÔÚÓÒ½Úµã
+                //å­˜åœ¨å³èŠ‚ç‚¹
                 if (list[2 * index + 1].value < list[2 * index + 2].value)
                 {
                     if (list[index].value <= list[2 * index + 1].value)
@@ -140,14 +140,17 @@ namespace BF.Utility
                     return;
                 }
             }
+
+            list.Add(new Node(t, value));
         }
         public void Remove(T t)
         {
             for(int i = 0; i < list.Count; i++)
             {
-                if (list[i].data.Equals(t))
+                if (EqualityComparer<T>.Default.Equals(list[i].data, t))
                 {
                     list.RemoveAt(i);
+                    return;
                 }
             }
         }
