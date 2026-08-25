@@ -29,4 +29,11 @@ AIOnly 是面向 Android 的单机、中文、俯视角反向塔防轻策略游�
 迭代，首个完整内容目标约为十余关并包含持续成长。
 
 当前工程已有 2D URP 基础、`BaseFramework`、DOTween Pro、Odin Inspector 和
-Easy Save 3，但尚未形成实际玩法。正式素材由用户提供，开发阶段使用简单图形占位。
+Easy Save 3。
+
+**首个可玩垂直切片已落地**（入口场景 `Assets/Scenes/Level001.unity`）：玩家用能量
+按钮部署士兵，士兵沿路径推进并攻击防御塔与大本营；防御塔发射子弹反击；倒计时内
+摧毁大本营则胜利并写入存档，超时则失败。全部数值由 `Assets/Game/Content/Definitions/`
+下的 ScriptableObject 定义驱动，改值无需改代码。详见 `GAMEPLAY.md` 的“已确认：首个
+垂直切片规则”与 `WORKFLOW.md` 的手动验收步骤。正式素材由用户提供，开发阶段使用
+简单几何图形占位。

@@ -42,7 +42,11 @@ namespace BF
         }
         private void Start()
         {
-            TransitManager.Instance().onSceneUnload += RecycleAll;
+            TransitManager transit = TransitManager.Instance();
+            if (transit != null)
+            {
+                transit.onSceneUnload += RecycleAll;
+            }
         }
         public GameObject Release(string a)
         {
@@ -86,7 +90,11 @@ namespace BF
         }
         private void OnDisable()
         {
-            TransitManager.Instance().onSceneUnload -= RecycleAll;
+            TransitManager transit = TransitManager.Instance();
+            if (transit != null)
+            {
+                transit.onSceneUnload -= RecycleAll;
+            }
         }
         [Serializable]
         class Pool

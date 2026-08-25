@@ -4,12 +4,13 @@
 
 - Unity：`2022.2.15f1c1`。
 - 渲染管线：URP `14.0.7`，2D Renderer。
-- 默认分辨率配置：1920 x 1080；最终屏幕方向和适配范围待确认。
+- 默认分辨率配置：1920 x 1080，已确认横屏（`defaultScreenOrientation` 待同步锁定）。
 - 输入：当前项目设置使用旧 Input Manager；`BF.InputManager` 基于鼠标 API，并通过
   Android 上的触摸到鼠标模拟实现基础兼容。
-- 场景：构建列表目前只有 `Assets/Scenes/SampleScene.unity`，内容基本为空。
+- 场景：构建列表首位为 `Assets/Scenes/Level001.unity`（垂直切片），`SampleScene`
+  保留但不在流程内。
 - 自有代码：`Assets/Scripts/BaseFramework` 下约 43 个 C# 文件。
-- 第三方：DOTween Pro、Odin Inspector、Easy Save 3。
+- 第三方：DOTween Pro、Odin Inspector、Easy Save 3、MCP for Unity（仅编辑器工具）。
 - 测试：Unity Test Framework 包存在，但用户不要求自有自动化测试。
 
 ## BaseFramework 已有能力
@@ -33,29 +34,49 @@
 - 当前 Unity 版本不是 LTS；未经用户批准不得升级。
 - 最近的编辑器日志曾包含 Odin 和 Easy Save 3 相关编译错误。日志也可能包含旧状态，
   因此下一次正式开发前需以当前 Unity Console/新日志重新确认。
+  （2026-08-24 批处理构建确认：全部自有代码零编译错误。）
 - `BF.InputManager` 依赖 `Input.mousePosition`、固定 1920 x 1080 参考值和
   `EventSystem.current`，需要验证不同 Android 分辨率、刘海/安全区及无 EventSystem 场景。
-- `BF.AudioManager` 运行时代码直接引用了 `UnityEditor` 命名空间，Android 构建前需修正。
-- Control + Component + Data 的核心生命周期已完成首轮修复，但现有业务对象尚未使用它，
-  仍需在首个垂直切片中验证对象池复用、异常路径和 Unity 组件挂载方式。
+- ~~`BF.AudioManager` 运行时代码直接引用了 `UnityEditor` 命名空间~~（2026-08-24 已修复，
+  删除了误引入的 using）。
+- Control + Component + Data 已在垂直切片中实际使用（士兵/塔/大本营），对象池复用、
+  生命周期与组件挂载方式得到验证。
 - 对象池以预制体名称作为键，重命名或同名资源可能破坏引用；长期应迁移到稳定 ID。
-- `MomentoManager` 仍是未完成雏形，抽象基类直接反序列化和版本迁移策略尚未定义。
+- `MomentoManager` 仍是未完成雏形，抽象基类直接反序列化和版本迁移策略尚未定义；
+  玩法侧存档暂走 `Game.Save.SaveService`（同一 Easy Save 3 底座），不经过它。
+- 批处理（`-batchmode -nographics`）中调用过 ES3 保存后退出 PlayMode 会冻结
+  （`ES3.Editor.dll` 钩子的无头环境问题），交互式编辑器未见影响；
+  细节见 `DECISIONS.md` 2026-08-25 条目。
 - 自有运行时代码缺少独立 Assembly Definition，第三方和游戏代码边界不清晰。
 
 ## 建议模块边界
 
 保持 `BaseFramework` 作为通用基础层，在其外增加面向本游戏的模块：
 
-- `Assets/Scripts/Game/Core`：游戏流程、关卡状态和共享契约。
-- `Assets/Scripts/Game/Combat`：单位、防御塔、伤害、状态和目标选择。
-- `Assets/Scripts/Game/Level`：关卡加载、地图、路径、部署区和胜负条件。
-- `Assets/Scripts/Game/Progression`：解锁、奖励和成长。
-- `Assets/Scripts/Game/Save`：具体存档模型、版本和迁移。
-- `Assets/Scripts/Game/UI`：战斗 HUD、关卡选择、成长和设置界面。
-- `Assets/Scripts/Game/Content`：ScriptableObject 配置与稳定内容 ID。
-- `Assets/Scripts/Game/Editor`：内容校验和素材替换工具，仅编辑器使用。
+`Assets/Scripts/Game/` 下已落地的模块：
 
-目录只在相关系统开始实现时创建，不提前生成空架构。
+- `Core`：`BattleFlow` 状态机（Ready/Playing/Paused/Won/Lost）、能量恢复、倒计时、
+  部署入口、胜负结算。组件通过 `BattleFlow.Current` / `BattleFlow.IsActive` 访问。
+- `Combat`：士兵/防御塔/大本营的 Control+Data+Component，追踪子弹，
+  `CombatRegistry`（阵营索敌），`CombatPool`（对象池封装），受击闪白。
+- `Level`：`BattleSetup` 从 `LevelDefinition` 装配战场（塔、大本营、HUD 绑定）。
+- `Save`：`GameSaveData`（schemaVersion=1）+ `SaveService`（Easy Save 3，
+  文件 `persistentDataPath/GameSave.es3`）。
+- `UI`：`BattleHUD` 能量条、倒计时、部署按钮（按关卡定义运行时生成）、暂停与结算面板。
+- `Content`：`SoldierDefinition` / `TowerDefinition` / `ProjectileDefinition` /
+  `BaseDefinition` / `LevelDefinition`，均继承 `ContentDefinition`（稳定 `contentId`）。
+- `Editor`：`BattleSceneBuilder` 一键构建场景/预制体/定义资产（幂等）。
+
+尚未建立：`Progression`（成长）、素材替换校验工具。目录只在相关系统开始实现时创建。
+
+## Unity MCP（2026-08-24 引入）
+
+- 包：`com.coplaydev.unity-mcp` v10.0.0，本地嵌入 `Packages/com.coplaydev.unity-mcp`。
+  git URL 直连在本机网络下会中断，故改为下载 release zip 后嵌入；升级需重新下载替换。
+- 服务器：`uvx --from mcpforunityserver mcp-for-unity --transport stdio`，已注册到
+  Codex `config.toml` 的 `[mcp_servers.unity]`；依赖 `uv`（pip 安装于 `D:\Python`）。
+- 用途：读取控制台、操作场景与资源、触发编译刷新等编辑器自动化。
+- 注意：MCP 服务器只在 Unity 编辑器运行时可用；批处理构建不经过它。
 
 ## Control + Component + Data 对象架构
 

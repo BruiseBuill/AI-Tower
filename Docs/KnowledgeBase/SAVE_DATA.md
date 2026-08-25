@@ -1,5 +1,22 @@
 # 存档设计
 
+## 当前实现状态（2026-08-24，schemaVersion=1）
+
+垂直切片的最小存档闭环已落地，代码位于 `Assets/Scripts/Game/Save/`：
+
+- `GameSaveData`：存档模型，`schemaVersion=1`。当前只包含关卡进度分区
+  `levels`（键为关卡稳定 ID，如 `level_001`），`LevelRecord` 记录
+  `completed`、`wins`、`bestRemainingSeconds`。
+- `SaveService`：基于 Easy Save 3 的读写入口（不经过 `BF.MomentoManager`，
+  后续如需统一再评估）。文件为 `Application.persistentDataPath/GameSave.es3`
+  （Windows 编辑器：`%USERPROFILE%\AppData\LocalLow\<公司名>\<产品名>\GameSave.es3`）。
+- 写入时机：仅胜利结算时调用 `SaveService.MarkLevelCompleted`（低频、非每帧）。
+  读取时机：`BattleSetup` 装配场景时读一次，用于 HUD 的“本关已攻克”标记。
+- 读取失败或文件不存在时返回默认空数据并写日志，不覆盖原文件。
+
+尚未实现、仍按“默认边界”预留的分区：玩家设置、成长进度、教学状态、内容版本。
+新增分区时递增 `schemaVersion` 并补充迁移逻辑。
+
 ## 已确认需求
 
 - 游戏为单机，存档保存在本地。

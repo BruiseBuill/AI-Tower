@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42cb4cc9ca7e90e45aa977c579ab1601, type: 3}
+  m_Name: Def_Soldier_Heavy
+  m_EditorClassIdentifier: 
+  contentId: soldier_heavy
+  displayName: "\u91CD\u88C5\u5175"
+  energyCost: 120
+  maxHealth: 360
+  moveSpeed: 1.1
+  attackRange: 1
+  attackDamage: 50
+  attackInterval: 1.3
+  tint: {r: 0.24313726, g: 0.5568628, b: 0.8784314, a: 1}
+  prefab: {fileID: 7574186826582429462, guid: b0342ac3ea961b7459135ab27596f6df, type: 3}

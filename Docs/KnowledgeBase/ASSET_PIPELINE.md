@@ -42,6 +42,32 @@
 
 目录在首次产生对应内容时建立，不创建大量空目录。
 
+## 已落地现状（垂直切片，2026-08-24）
+
+- 定义资产目录：`Assets/Game/Content/Definitions/`，全部由
+  `Game.Editor.BattleSceneBuilder` 幂等生成，持稳定 `contentId`：
+
+  | contentId | 类型 | 说明 |
+  | --- | --- | --- |
+  | `soldier_basic` | `SoldierDefinition` | 突击兵（低费近战） |
+  | `soldier_heavy` | `SoldierDefinition` | 重装兵（高费高耐久） |
+  | `tower_basic` | `TowerDefinition` | 基础防御塔 |
+  | `proj_basic` | `ProjectileDefinition` | 塔用追踪弹 |
+  | `base_basic` | `BaseDefinition` | 敌方大本营 |
+  | `level_001` | `LevelDefinition` | 首关：时限/能量/塔位/路径 |
+
+- 运行时预制体：`Assets/Game/Prefabs/`（`Prefab_Soldier`、`Prefab_Tower`、
+  `Prefab_Base`、`Prefab_Projectile`），均含 `VisualRoot` 表现契约节点；
+  士兵预制体按 `SoldierDefinition.Tint` 着色。
+- 改值入口：直接编辑定义资产的 Inspector 字段（能量、血量、速度、伤害、时限等），
+  不需要改代码；关卡结构变化（塔位、路径点）也在 `level_001` 资产内。
+- 一键重建：菜单 `AIOnly/构建垂直切片场景`（或批处理
+  `-executeMethod Game.Editor.BattleSceneBuilder.BuildAll`）重建定义资产、
+  预制体、场景与对象池注册，会覆盖手工修改。
+- 素材替换现状：占位表现为程序生成的纯色 Sprite/方块；正式素材到来后，
+  替换 `VisualRoot` 下的表现对象或定义资产上的 Sprite 引用即可，
+  `contentId` 与存档保持不变。
+
 ## 替换操作的验收标准
 
 - 替换 Sprite、动画、音频或特效引用后，玩法代码无需改动。

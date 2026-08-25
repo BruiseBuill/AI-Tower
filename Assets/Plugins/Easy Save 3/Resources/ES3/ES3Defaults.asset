@@ -30,7 +30,9 @@ MonoBehaviour:
     serializationDepthLimit: 64
     assemblyNames:
     - Assembly-CSharp-firstpass
+    - MCPForUnity.Runtime
     - PsdPlugin
+    - MCPForUnity.Editor
     - Assembly-CSharp
     - PPv2URPConverters
     - Sirenix.OdinInspector.Modules.UnityMathematics

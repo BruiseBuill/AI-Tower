@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42cb4cc9ca7e90e45aa977c579ab1601, type: 3}
+  m_Name: Def_Soldier_Basic
+  m_EditorClassIdentifier: 
+  contentId: soldier_basic
+  displayName: "\u7A81\u51FB\u5175"
+  energyCost: 50
+  maxHealth: 120
+  moveSpeed: 1.6
+  attackRange: 0.9
+  attackDamage: 20
+  attackInterval: 1
+  tint: {r: 0, g: 0, b: 0, a: 0}
+  prefab: {fileID: 7574186826582429462, guid: b0342ac3ea961b7459135ab27596f6df, type: 3}
