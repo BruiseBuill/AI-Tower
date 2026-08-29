@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b784428f7b04b0c44a1f86463301026e, type: 3}
+  m_Name: Def_Tower_Basic_Data
+  m_EditorClassIdentifier: 
+  contentId: tower_basic
+  displayName: "\u9632\u5FA1\u5854"
+  maxHealth: 150
+  attackRange: 2.6
+  attackInterval: 1.4
+  attackDamage: 10
+  projectile: {fileID: 11400000, guid: 93a359cc5850a32429fd48a4c00926fe, type: 2}
+  prefab: {fileID: 5786899049033328862, guid: 7f0c6be49c0b4f42a4c2be3cf6b9710a, type: 3}

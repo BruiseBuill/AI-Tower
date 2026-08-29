@@ -42,27 +42,31 @@
 
 目录在首次产生对应内容时建立，不创建大量空目录。
 
-## 已落地现状（垂直切片，2026-08-24）
+## 已落地现状（垂直切片，2026-08-29）
 
 - 定义资产目录：`Assets/Game/Content/Definitions/`，全部由
-  `Game.Editor.BattleSceneBuilder` 幂等生成，持稳定 `contentId`：
+  `Game.Level.Editor.BattleSceneBuilder` 幂等生成，持稳定 `contentId`：
 
   | contentId | 类型 | 说明 |
   | --- | --- | --- |
-  | `soldier_basic` | `SoldierDefinition` | 突击兵（低费近战） |
-  | `soldier_heavy` | `SoldierDefinition` | 重装兵（高费高耐久） |
-  | `tower_basic` | `TowerDefinition` | 基础防御塔 |
+  | `soldier_basic` | `SoldierData` | 突击兵（低费近战） |
+  | `soldier_heavy` | `SoldierData` | 重装兵（高费高耐久） |
+  | `soldier_elite` | `SoldierData` | 精英兵（最高费、高耐久高伤害） |
+  | `tower_basic` | `TowerData` | 基础防御塔 |
   | `proj_basic` | `ProjectileDefinition` | 塔用追踪弹 |
   | `base_basic` | `BaseDefinition` | 敌方大本营 |
-  | `level_001` | `LevelDefinition` | 首关：时限/能量/塔位/路径 |
+  | `level_001` | `LevelDefinition` | 首关：时限/能量/塔位/大本营位置 |
 
-- 运行时预制体：`Assets/Game/Prefabs/`（`Prefab_Soldier`、`Prefab_Tower`、
-  `Prefab_Base`、`Prefab_Projectile`），均含 `VisualRoot` 表现契约节点；
-  士兵预制体按 `SoldierDefinition.Tint` 着色。
+- 运行时预制体：`Assets/Game/Prefabs/`（`Prefab_Soldier_Basic`、
+  `Prefab_Soldier_Heavy`、`Prefab_Soldier_Elite`、`Prefab_Tower_Basic`、`Prefab_Base`、`Prefab_Projectile`），
+  均含 `VisualRoot` 表现契约节点；士兵预制体按 `SoldierData.Tint` 着色。
+- 能量条档位颜色由 `SoldierData.TierColor` 驱动；当前三个生产兵种的消耗阈值分别为 50、120、180，
+  UI 不直接硬编码兵种颜色。
 - 改值入口：直接编辑定义资产的 Inspector 字段（能量、血量、速度、伤害、时限等），
-  不需要改代码；关卡结构变化（塔位、路径点）也在 `level_001` 资产内。
+  不需要改代码；关卡结构变化（塔位、大本营位置）也在 `level_001` 资产内，
+  士兵推进规则由兵种配置中的塔吸引范围驱动。
 - 一键重建：菜单 `AIOnly/构建垂直切片场景`（或批处理
-  `-executeMethod Game.Editor.BattleSceneBuilder.BuildAll`）重建定义资产、
+  `-executeMethod Game.Level.Editor.BattleSceneBuilder.BuildAll`）重建定义资产、
   预制体、场景与对象池注册，会覆盖手工修改。
 - 素材替换现状：占位表现为程序生成的纯色 Sprite/方块；正式素材到来后，
   替换 `VisualRoot` 下的表现对象或定义资产上的 Sprite 引用即可，
@@ -71,10 +75,23 @@
 ## 替换操作的验收标准
 
 - 替换 Sprite、动画、音频或特效引用后，玩法代码无需改动。
-- 替换单位视觉后，路径、碰撞、选中、血条和攻击锚点仍正确。
+- 替换单位视觉后，直线推进、塔吸引、碰撞、选中、血条和攻击锚点仍正确。
 - 资源缺失时显示明确占位内容或警告，不以空引用导致流程崩溃。
 - 稳定 ID 不因文件改名、显示名称改变或美术版本更新而改变。
 - 已写入存档的内容 ID 在替换素材后仍可正常读取。
+
+## 2026-08-29 重构后的配置与预制体边界
+
+- `Game.Content.SoldierData` / `Game.Content.TowerData` 是静态 ScriptableObject 配置；
+  `SoldierRuntimeData` / `TowerRuntimeData` 是 Prefab 上的运行时状态组件，二者不可互换。
+- 每个具体兵种、塔型拥有自己的 Prefab，并由对应配置的 `prefab` 引用绑定。当前生产
+  资产为 `Def_Soldier_Basic_Data`、`Def_Soldier_Heavy_Data`、`Def_Tower_Basic_Data`；
+  旧的 `Def_Soldier_Basic`、`Def_Soldier_Heavy`、`Def_Tower_Basic` 及其
+  `SoldierDefinition` / `TowerDefinition` 类型仅作为向后兼容资源保留。
+- 新增单位时：先创建对应 `SoldierData` 或 `TowerData` 资产，再创建挂载具体控制器、
+  运行时 Data 和独立行为模块的 Prefab，最后把两者引用写入数据资产和关卡资产。
+- 关卡布局不写入单位/塔 Prefab；它只进入 `LevelDefinition` 的 ScriptableObject，
+  通过 `AIOnly/关卡编辑器` 修改并用 `AIOnly/校验全部关卡` 检查。
 
 ## 用户交付素材时建议附带的信息
 

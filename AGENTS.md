@@ -41,6 +41,26 @@
 
 ## 当前最高优先级
 
-在开发正式玩法前，应先建立可运行的最小垂直切片：一张地图、一条或多条路径、
-一种进攻单位、一种防御塔、最小部署操作、胜负结算和最小存档闭环。具体规则仍需
-用户确认，见 `Docs/KnowledgeBase/OPEN_QUESTIONS.md`。
+首个可运行的最小垂直切片已经建立（入口 `Assets/Scenes/Level001.unity`）。后续正式
+玩法扩展应继续保持一张地图、直线推进与塔拦截、至少一种进攻单位、一种防御塔、最小部署
+操作、胜负结算和最小存档闭环可独立运行。具体新增规则仍需用户确认，见
+`Docs/KnowledgeBase/OPEN_QUESTIONS.md`。
+
+## 当前架构基线（2026-08-29）
+
+- 士兵与防御塔按对象拆分目录；静态配置是 `Game.Content.SoldierData` /
+  `Game.Content.TowerData` ScriptableObject，运行时状态是
+  `SoldierRuntimeData` / `TowerRuntimeData`。
+- 当前生产配置资产为 `Def_Soldier_Basic_Data`、`Def_Soldier_Heavy_Data`、
+  `Def_Soldier_Elite_Data` 和 `Def_Tower_Basic_Data`；旧的同名无 `_Data` 资产仍保留为兼容资源，
+  但不再被首个关卡引用。
+- 士兵直线移动、塔吸引、近战攻击，防御塔索敌、炮击分别是独立模块；对象控制器只负责
+  初始化、生命周期和对外战斗契约。士兵靠近塔时塔优先于大本营。
+- 战斗结束、重试和新战斗装配前会关闭已注册战斗实体并清理对象池，避免持久化
+  `PoolManager` 中残留上一局士兵、塔或炮弹。
+- 每个兵种和塔型使用独立 Prefab；首个关卡当前有突击兵、重装兵、精英兵三种兵种。
+  战场输入由 `Game.Input.BattleInputManager` 继承 `BF.InputManager`，鼠标左键和单指触摸点击地图后，
+  按当前能量可负担的最高阶兵种生成士兵。当前生产入口是
+  `AIOnly/构建垂直切片场景`，关卡数据入口是 `AIOnly/关卡编辑器`。
+- 旧的 `SoldierDefinition`、`TowerDefinition` 与旧模块类仅作为已有资产兼容壳；新增
+  代码应依赖 `SoldierData` / `TowerData` 及新模块类，不再把运行时状态命名为配置数据。

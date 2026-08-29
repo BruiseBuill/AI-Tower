@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 6826777316083227655}
   - component: {fileID: 7302950367781812611}
   m_Layer: 0
-  m_Name: Prefab_Soldier
+  m_Name: Prefab_Soldier_Legacy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -63,7 +63,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7574186826582429462}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 131d22f8cdccc834ea2fac28368a6bc4, type: 3}
+  m_Script: {fileID: 11500000, guid: 7f4ad9d2a92e4f8f9e4d0b22b1f5d101, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   sharedData: {fileID: 0}

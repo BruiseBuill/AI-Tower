@@ -76,7 +76,7 @@ namespace BF
             return ref keyEventDic[keyName].onKey;
         }
 
-        private void Awake()
+        protected virtual void Awake()
         {
             Vector3 scale = new Vector3(Screen.width / referenceTouchResolution.x, Screen.height / referenceTouchResolution.y, 0);
 
@@ -89,7 +89,7 @@ namespace BF
 #if UNITY_STANDALONE_WIN
 #endif
         }
-        private void Update()
+        protected virtual void Update()
         {
             if (!canMouseInput)
             {

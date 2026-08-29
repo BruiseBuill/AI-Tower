@@ -18,7 +18,8 @@ MonoBehaviour:
   maxHealth: 120
   moveSpeed: 1.6
   attackRange: 0.9
+  towerDetectionRange: 2.5
   attackDamage: 20
   attackInterval: 1
   tint: {r: 0, g: 0, b: 0, a: 0}
-  prefab: {fileID: 7574186826582429462, guid: b0342ac3ea961b7459135ab27596f6df, type: 3}
+  prefab: {fileID: 7574186826582429462, guid: b98be8e6ac4d4b2a9d9010cd0e761108, type: 3}

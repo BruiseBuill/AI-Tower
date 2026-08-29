@@ -2,8 +2,11 @@ using BF;
 using Game.Combat;
 using Game.Content;
 using Game.Save;
+using Game.Soldier;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+using SoldierConfig = Game.Content.SoldierData;
 
 namespace Game.Core
 {
@@ -37,12 +40,15 @@ namespace Game.Core
         float energy;
         float remainingSeconds;
         bool saveWritten;
+        bool isCleaningUp;
 
         public BattleState State => state;
         public LevelDefinition Level => level;
         public float Energy => energy;
         public float EnergyMax => level != null ? level.EnergyMax : 0f;
         public float RemainingSeconds => remainingSeconds;
+        /// <summary>当前能量可负担的最高阶士兵；各兵种 EnergyCost 同时作为档位阈值。</summary>
+        public SoldierConfig CurrentDeployableSoldier => SelectCurrentDeployableSoldier();
 
         /// <summary>能量变化（当前值, 上限）。</summary>
         public event System.Action<float, float> EnergyChanged;
@@ -59,6 +65,7 @@ namespace Game.Core
 
         void OnDestroy()
         {
+            CleanupBattleEntities();
             if (Current == this)
             {
                 Current = null;
@@ -116,7 +123,23 @@ namespace Game.Core
         /// 玩家部署入口：能量足够则扣除能量并生成士兵。
         /// 返回是否部署成功（能量不足或战斗未进行时为 false）。
         /// </summary>
-        public bool TryDeploy(SoldierDefinition definition)
+        public bool TryDeploy(SoldierConfig definition)
+        {
+            return TryDeploy(definition, Vector3.zero);
+        }
+
+        /// <summary>玩家点击战场后的部署入口：由当前能量决定兵种档位。</summary>
+        public bool TryDeployAt(Vector3 worldPosition)
+        {
+            SoldierConfig definition = SelectCurrentDeployableSoldier();
+            if (definition == null)
+            {
+                return false;
+            }
+            return TryDeploy(definition, worldPosition);
+        }
+
+        bool TryDeploy(SoldierConfig definition, Vector3 spawnPosition)
         {
             if (state != BattleState.Playing || definition == null || definition.Prefab == null)
             {
@@ -132,29 +155,62 @@ namespace Game.Core
                 return false;
             }
 
+            if (!SpawnSoldier(definition, spawnPosition))
+            {
+                return false;
+            }
+
             energy -= definition.EnergyCost;
             EnergyChanged?.Invoke(energy, level.EnergyMax);
-            SpawnSoldier(definition);
             return true;
         }
 
-        void SpawnSoldier(SoldierDefinition definition)
+        SoldierConfig SelectCurrentDeployableSoldier()
+        {
+            if (level == null || level.DeployableSoldiers == null)
+            {
+                return null;
+            }
+
+            SoldierConfig selected = null;
+            for (int i = 0; i < level.DeployableSoldiers.Count; i++)
+            {
+                SoldierConfig candidate = level.DeployableSoldiers[i];
+                if (candidate == null || candidate.Prefab == null || candidate.EnergyCost > energy)
+                {
+                    continue;
+                }
+                if (selected == null || candidate.EnergyCost > selected.EnergyCost)
+                {
+                    selected = candidate;
+                }
+            }
+            return selected;
+        }
+
+        bool SpawnSoldier(SoldierConfig definition, Vector3 spawnPosition)
         {
             GameObject instance = CombatPool.Spawn(definition.Prefab);
-            SoldierControl control = instance.GetComponent<SoldierControl>();
+            SoldierBase control = instance.GetComponent<SoldierBase>();
+            if (control == null)
+            {
+                Debug.LogError($"[Battle] 士兵预制体未挂载 SoldierBase 具体子类：{definition.Prefab.name}");
+                CombatPool.Recycle(instance);
+                return false;
+            }
             control.Initialize(new SoldierInit
             {
                 Definition = definition,
-                Path = level.SoldierPath as System.Collections.Generic.List<Vector3> ?? new System.Collections.Generic.List<Vector3>(level.SoldierPath),
-                SpawnOffset = new Vector3(0f, Random.Range(-0.35f, 0.35f), 0f)
+                SpawnPosition = spawnPosition
             });
             control.Open();
+            return true;
         }
 
         /// <summary>大本营被摧毁时由 BattleSetup 转发。</summary>
         public void NotifyBaseDestroyed()
         {
-            if (state != BattleState.Playing)
+            if (state != BattleState.Playing || isCleaningUp)
             {
                 return;
             }
@@ -182,8 +238,10 @@ namespace Game.Core
             GameManager gameManager = GameManager.Instance();
             if (gameManager != null)
             {
-                gameManager.IsPlaying = true;
+                gameManager.IsPlaying = false;
             }
+            SetState(BattleState.Ready);
+            CleanupBattleEntities();
             Scene scene = SceneManager.GetActiveScene();
             if (scene.buildIndex >= 0)
             {
@@ -199,6 +257,7 @@ namespace Game.Core
         {
             SetState(BattleState.Won);
             GameManager.Instance().IsPlaying = false;
+            CleanupBattleEntities();
             WriteSave();
         }
 
@@ -206,6 +265,26 @@ namespace Game.Core
         {
             SetState(BattleState.Lost);
             GameManager.Instance().IsPlaying = false;
+            CleanupBattleEntities();
+        }
+
+        void CleanupBattleEntities()
+        {
+            if (isCleaningUp)
+            {
+                return;
+            }
+
+            isCleaningUp = true;
+            try
+            {
+                CombatRegistry.CloseAll();
+                CombatPool.RecycleAll();
+            }
+            finally
+            {
+                isCleaningUp = false;
+            }
         }
 
         void WriteSave()

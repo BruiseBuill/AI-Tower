@@ -97,8 +97,9 @@ GameObject:
   - component: {fileID: 9102821722693927149}
   - component: {fileID: 2494124409032526915}
   - component: {fileID: 4230962433691990893}
+  - component: {fileID: 1000000000000000001}
   m_Layer: 0
-  m_Name: Prefab_Tower
+  m_Name: Prefab_Tower_Legacy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -146,7 +147,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 5786899049033328862}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e21d92b91c62e3b41ae9c9250a8fba9d, type: 3}
+  m_Script: {fileID: 11500000, guid: 5b3a18ce4f834a6d8df8d0c21c2be103, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   sharedData: {fileID: 0}
@@ -182,3 +183,17 @@ MonoBehaviour:
   bodyRenderer: {fileID: 8188423469127771729}
   flashColor: {r: 1, g: 1, b: 1, a: 1}
   flashDuration: 0.08
+--- !u!114 &1000000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5786899049033328862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2c74e81e94040f0a5cb5f6f2e9d7104, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sharedData: {fileID: 0}
+  priority: -10

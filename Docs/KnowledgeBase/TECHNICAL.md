@@ -4,7 +4,7 @@
 
 - Unity：`2022.2.15f1c1`。
 - 渲染管线：URP `14.0.7`，2D Renderer。
-- 默认分辨率配置：1920 x 1080，已确认横屏（`defaultScreenOrientation` 待同步锁定）。
+- 默认分辨率配置：1920 x 1080，已确认横屏（LandscapeLeft，允许横屏旋转）。
 - 输入：当前项目设置使用旧 Input Manager；`BF.InputManager` 基于鼠标 API，并通过
   Android 上的触摸到鼠标模拟实现基础兼容。
 - 场景：构建列表首位为 `Assets/Scenes/Level001.unity`（垂直切片），`SampleScene`
@@ -56,29 +56,64 @@
 `Assets/Scripts/Game/` 下已落地的模块：
 
 - `Core`：`BattleFlow` 状态机（Ready/Playing/Paused/Won/Lost）、能量恢复、倒计时、
-  部署入口、胜负结算。组件通过 `BattleFlow.Current` / `BattleFlow.IsActive` 访问。
+  按能量阈值选择兵种的点击部署入口、直线移动/塔优先规则协调、胜负结算和战斗清理。
+  组件通过 `BattleFlow.Current` /
+  `BattleFlow.IsActive` 访问。
 - `Combat`：士兵/防御塔/大本营的 Control+Data+Component，追踪子弹，
   `CombatRegistry`（阵营索敌），`CombatPool`（对象池封装），受击闪白。
 - `Level`：`BattleSetup` 从 `LevelDefinition` 装配战场（塔、大本营、HUD 绑定）。
 - `Save`：`GameSaveData`（schemaVersion=1）+ `SaveService`（Easy Save 3，
   文件 `persistentDataPath/GameSave.es3`）。
-- `UI`：`BattleHUD` 能量条、倒计时、部署按钮（按关卡定义运行时生成）、暂停与结算面板。
-- `Content`：`SoldierDefinition` / `TowerDefinition` / `ProjectileDefinition` /
+- `Input`：`BattleInputManager` 继承 `BF.InputManager`，接收基础 `onClick` 并把屏幕坐标转换为世界坐标。
+- `UI`：`BattleHUD` 三档颜色能量条、倒计时、当前部署档位状态、暂停与结算面板。
+- `Content`：`SoldierData` / `TowerData` / `ProjectileDefinition` /
   `BaseDefinition` / `LevelDefinition`，均继承 `ContentDefinition`（稳定 `contentId`）。
 - `Editor`：`BattleSceneBuilder` 一键构建场景/预制体/定义资产（幂等）。
 
 尚未建立：`Progression`（成长）、素材替换校验工具。目录只在相关系统开始实现时创建。
 
-## Unity MCP（2026-08-24 引入）
+## Unity MCP（2026-08-28 重装并固化恢复流程）
 
-- 包：`com.coplaydev.unity-mcp` v10.0.0，本地嵌入 `Packages/com.coplaydev.unity-mcp`。
-  git URL 直连在本机网络下会中断，故改为下载 release zip 后嵌入；升级需重新下载替换。
-- 服务器：`uvx --from mcpforunityserver mcp-for-unity --transport stdio`，已注册到
-  Codex `config.toml` 的 `[mcp_servers.unity]`；依赖 `uv`（pip 安装于 `D:\Python`）。
+- 包：`com.coplaydev.unity-mcp` v10.1.2，本地嵌入 `Packages/com.coplaydev.unity-mcp`。
+  git URL 直连在本机网络下会中断，故使用 GitHub tag archive 下载后嵌入。
+- 服务器：`D:\Python\Scripts\uvx.exe --from mcpforunityserver==10.1.2 mcp-for-unity --transport stdio`，
+  注册到用户 Codex `config.toml` 的 `[mcp_servers.unityMCP]`；依赖 `uv/uvx`（本机位于
+  `D:\Python`）。
+- 恢复脚本：`Docs/Tools/Install-UnityMcp.ps1`。从项目根目录执行
+  `powershell -ExecutionPolicy Bypass -File .\Docs\Tools\Install-UnityMcp.ps1`，会校验并重装
+  Unity 包，同时通过 `codex mcp add` 幂等恢复 Codex 注册，不覆盖其它 MCP；网络不可用时可用
+  `-SkipPackageDownload` 只修复 Codex 注册（前提是工程包已经存在且版本正确）。
+- 回退后独立入口：`C:\Users\Bruis\Install-AIOnly-UnityMcp.ps1`，默认指向本工程，独立于项目内
+  文件，适合项目内脚本被回退时执行。
+- MCP 服务器只在 Unity 编辑器运行时可用；Unity 侧需保持 MCP for Unity Bridge 运行，Codex
+  修改配置后需重启或新建任务以加载工具。2026-08-29 已在交互式 Unity 编辑器中完成实例发现、
+  资产刷新、编译状态读取、菜单执行和 Console 读取；当前项目无自有编译错误。
 - 用途：读取控制台、操作场景与资源、触发编译刷新等编辑器自动化。
 - 注意：MCP 服务器只在 Unity 编辑器运行时可用；批处理构建不经过它。
 
 ## Control + Component + Data 对象架构
+
+### 2026-08-29 对象与数据重构
+
+- 静态配置数据独立为 ScriptableObject：`Game.Content.SoldierData` 与
+  `Game.Content.TowerData`，分别保存数值、稳定 `contentId`、Prefab 和相关资源引用。
+  旧的 `SoldierDefinition` / `TowerDefinition` 继承这些数据类，保留已有资产引用兼容性；
+  新代码应依赖基类数据类型。
+- 运行时共享状态改名为 `Game.Soldier.SoldierRuntimeData` 与
+  `Game.Tower.TowerRuntimeData`，只保存当前生命和当前目标等实例状态，
+  不写回 ScriptableObject。旧 `Game.Soldier.SoldierData` / `Game.Tower.TowerData`
+  仅保留为兼容旧 Prefab 的派生壳。
+- 对象目录已按职责收拢：
+  `Game/Soldier/Core`、`Game/Soldier/Data`、`Game/Soldier/Modules/Movement`、
+  `Game/Soldier/Modules/Attack`，以及对应的 `Game/Tower` 目录。
+  士兵移动与近战攻击、塔索敌与炮击互不直接引用，通过运行时 Data 协作。
+- 当前 Prefab 契约：`Prefab_Soldier_Basic`、`Prefab_Soldier_Heavy`、
+  `Prefab_Soldier_Elite`、`Prefab_Tower_Basic`、`Prefab_Base`、`Prefab_Projectile`；单位/塔根节点挂逻辑，
+  `VisualRoot` 子节点承载可替换表现。塔的炮击模块实际调用 `Projectile.Spawn`，
+  子弹 Prefab 必须包含 `Game.Projectile.Projectile`。
+- 关卡编辑器由 `LevelEditorWindow` 管理 `LevelCatalog` 与多个 `LevelDefinition`，
+  可编辑规则、可部署兵种、塔列表、塔位和大本营位置；Scene 视图拖动会
+  直接写回关卡 ScriptableObject。`LevelDefinitionValidator` 提供当前/全部关卡校验。
 
 该模式用于一个运行时物体内部的组合，不作为跨系统全局消息总线。它更接近
 “外观入口 + 共享状态/领域事件 + 行为组件”，不是传统 MVC。
